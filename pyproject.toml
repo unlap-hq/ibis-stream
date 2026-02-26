@@ -4,12 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ibis-stream"
-version = "0.1.0"
+version = "0.1.1"
 description = "Streaming insert/upsert helpers for Ibis backends"
 license = { file = "LICENSE" }
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
 ]
+readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
   "ibis-framework>=12.0.0",
