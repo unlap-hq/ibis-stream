@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Release
 
 on:
   push:
@@ -16,9 +16,13 @@ on:
           - pypi
 
 jobs:
+  ci:
+    uses: ./.github/workflows/checks-reusable.yml
+
   build:
     name: build
     runs-on: ubuntu-latest
+    needs: ci
 
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +53,7 @@ jobs:
   publish-testpypi:
     name: publish-testpypi
     runs-on: ubuntu-latest
-    needs: build
+    needs: [ci, build]
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi')
     environment: testpypi
     permissions:
@@ -71,7 +75,7 @@ jobs:
   publish-pypi:
     name: publish-pypi
     runs-on: ubuntu-latest
-    needs: build
+    needs: [ci, build]
     if: github.event_name == 'workflow_dispatch' && inputs.target == 'pypi'
     environment: pypi
     permissions:
