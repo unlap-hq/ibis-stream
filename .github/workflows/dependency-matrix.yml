@@ -1,0 +1,111 @@
+name: Dependency Matrix
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  min-deps:
+    name: min-deps
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install package + dev dependencies
+        run: python -m pip install --group dev ".[bigquery]"
+
+      - name: Build minimum runtime constraints
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import pathlib
+          import tomllib
+
+          from packaging.requirements import Requirement
+          from packaging.version import Version
+
+          pyproject = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+          raw_requirements = list(pyproject["project"]["dependencies"])
+          for extra_reqs in pyproject["project"].get("optional-dependencies", {}).values():
+              raw_requirements.extend(extra_reqs)
+
+          def floor_version(req: Requirement) -> str | None:
+              floor: Version | None = None
+              for spec in req.specifier:
+                  if spec.operator == "==":
+                      return spec.version
+                  if spec.operator in {">=", "~="}:
+                      candidate = Version(spec.version)
+                      if floor is None or candidate > floor:
+                          floor = candidate
+              return str(floor) if floor is not None else None
+
+          pins: list[str] = []
+          for raw in raw_requirements:
+              req = Requirement(raw)
+              floor = floor_version(req)
+              extras = f"[{','.join(sorted(req.extras))}]" if req.extras else ""
+              marker = f"; {req.marker}" if req.marker else ""
+              if floor:
+                  pins.append(f"{req.name}{extras}=={floor}{marker}")
+              else:
+                  spec = str(req.specifier) if req.specifier else ""
+                  pins.append(f"{req.name}{extras}{spec}{marker}")
+
+          constraints_path = pathlib.Path(".ci/min-constraints.txt")
+          constraints_path.parent.mkdir(parents=True, exist_ok=True)
+          constraints_path.write_text("\n".join(sorted(set(pins))) + "\n")
+          print(constraints_path.read_text())
+          PY
+
+      - name: Install minimum runtime dependencies
+        run: python -m pip install --upgrade --force-reinstall -r .ci/min-constraints.txt
+
+      - name: Verify dependency graph
+        run: python -m pip check
+
+      - name: Run unit tests
+        run: python -m pytest -q -m "not integration"
+
+      - name: Run integration tests
+        run: python scripts/integration.py run
+
+  latest-deps:
+    name: latest-deps
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install package + dev dependencies
+        run: python -m pip install --group dev ".[bigquery]"
+
+      - name: Install latest runtime dependencies
+        run: python -m pip install --upgrade -e ".[bigquery]"
+
+      - name: Verify dependency graph
+        run: python -m pip check
+
+      - name: Run unit tests
+        run: python -m pytest -q -m "not integration"
+
+      - name: Run integration tests
+        run: python scripts/integration.py run
