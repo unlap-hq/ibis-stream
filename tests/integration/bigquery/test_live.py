@@ -149,9 +149,7 @@ def _seed_rows_via_query(
         params.append(bigquery.ScalarQueryParameter(id_param, "INT64", row_id))
         params.append(bigquery.ScalarQueryParameter(payload_param, "STRING", payload))
 
-    query = (
-        f"INSERT INTO `{table_path}` (id, payload) VALUES " f"{', '.join(value_placeholders)}"
-    )
+    query = f"INSERT INTO `{table_path}` (id, payload) VALUES {', '.join(value_placeholders)}"
     job_config = bigquery.QueryJobConfig(query_parameters=params)
     bq_client.query(query, job_config=job_config).result()
 
