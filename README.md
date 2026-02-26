@@ -1,6 +1,9 @@
 # ibis-stream
 
-`ibis-stream` provides streaming insert helpers for Ibis backends.
+[![Checks](https://github.com/unlap-hq/ibis-stream/actions/workflows/checks.yml/badge.svg)](https://github.com/unlap-hq/ibis-stream/actions/workflows/checks.yml)
+[![PyPI version](https://img.shields.io/pypi/v/ibis-stream.svg)](https://pypi.org/project/ibis-stream/)
+
+`ibis-stream` provides streaming insert helpers for [ibis](https://github.com/ibis-project/ibis).
 
 Right now, the project focuses on **BigQuery**: inside a context manager, it patches Ibis BigQuery `insert`/`upsert` so in-memory data is written through the BigQuery Storage Write API.
 
@@ -132,7 +135,14 @@ Raised for Storage Write failures surfaced by this patch layer (for example, row
 
 Non-in-memory table expressions fall back to the original backend `insert`/`upsert` implementation.
 
-## Testing
+## Development with Pixi
+
+```bash
+pixi run lint
+pixi run format-check
+pixi run test-unit
+pixi run test-integration-bigquery
+```
 
 Run unit tests:
 
@@ -155,15 +165,6 @@ export BQ_DATASET=<existing-dataset>
 export BQ_LOCATION=US  # optional
 
 pytest -q tests/integration/bigquery/test_live.py -m "integration and bigquery"
-```
-
-## Development with Pixi
-
-```bash
-pixi run lint
-pixi run format-check
-pixi run test-unit
-pixi run test-integration-bigquery
 ```
 
 ## License
