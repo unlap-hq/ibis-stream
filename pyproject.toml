@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ibis-stream"
-version = "0.1.1"
+version = "0.1.2"
 description = "Streaming insert/upsert helpers for Ibis backends"
 license = { file = "LICENSE" }
 classifiers = [
